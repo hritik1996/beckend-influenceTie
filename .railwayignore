@@ -6,10 +6,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Development files
-src/
-*.ts
-!dist/
+# Development files (do NOT ignore src/ for Railway builds)
+# Keep sources so Railway can run `npm run build`
+# If you ever commit built output, you can ignore dist/ locally, but
+# Railway will build from source, so include everything needed.
 
 # Environment files (will be set in Railway dashboard)
 .env
