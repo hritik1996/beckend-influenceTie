@@ -24,7 +24,7 @@ import {
   HTTP_STATUS,
   ERROR_MESSAGES 
 } from '../utils/response';
-import { ZodError } from 'zod';
+import { ZodError, ZodIssue } from 'zod';
 
 // User Registration
 export async function register(req: Request, res: Response) {
@@ -118,12 +118,12 @@ export async function register(req: Request, res: Response) {
     
     if (error instanceof ZodError) {
       const errors: Record<string, string[]> = {};
-      error.errors.forEach((err) => {
-        const field = err.path.join('.');
+      error.issues.forEach((issue: ZodIssue) => {
+        const field = issue.path.join('.');
         if (!errors[field]) {
           errors[field] = [];
         }
-        errors[field].push(err.message);
+        errors[field].push(issue.message);
       });
       return validationErrorResponse(res, ERROR_MESSAGES.VALIDATION_ERROR, errors);
     }
@@ -193,12 +193,12 @@ export async function login(req: Request, res: Response) {
     
     if (error instanceof ZodError) {
       const errors: Record<string, string[]> = {};
-      error.errors.forEach((err) => {
-        const field = err.path.join('.');
+      error.issues.forEach((issue: ZodIssue) => {
+        const field = issue.path.join('.');
         if (!errors[field]) {
           errors[field] = [];
         }
-        errors[field].push(err.message);
+        errors[field].push(issue.message);
       });
       return validationErrorResponse(res, ERROR_MESSAGES.VALIDATION_ERROR, errors);
     }
@@ -261,12 +261,12 @@ export async function verifyOTP(req: Request, res: Response) {
     
     if (error instanceof ZodError) {
       const errors: Record<string, string[]> = {};
-      error.errors.forEach((err) => {
-        const field = err.path.join('.');
+      error.issues.forEach((issue: ZodIssue) => {
+        const field = issue.path.join('.');
         if (!errors[field]) {
           errors[field] = [];
         }
-        errors[field].push(err.message);
+        errors[field].push(issue.message);
       });
       return validationErrorResponse(res, ERROR_MESSAGES.VALIDATION_ERROR, errors);
     }

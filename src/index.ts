@@ -32,9 +32,13 @@ app.use('/api/messages', messagesRouter);
 app.use('/api/admin', adminRouter);
 
 // Basic error handler
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  console.error(err);
-  res.status(500).json({ message: 'Internal Server Error' });
+app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  // Narrow unknown to Error safely
+  const message = err instanceof Error ? err.message : 'Internal Server Error';
+  if (err) {
+    console.error(err);
+  }
+  res.status(500).json({ message });
 });
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
@@ -49,7 +53,8 @@ async function startServer() {
         const { setupRailwayDatabase } = require('../scripts/railway-setup.js');
         await setupRailwayDatabase();
       } catch (setupError) {
-        console.log('Database setup skipped:', setupError.message);
+        const message = setupError instanceof Error ? setupError.message : String(setupError);
+        console.log('Database setup skipped:', message);
       }
     }
     
