@@ -68,6 +68,7 @@ router.get('/:id', async (req: Request, res: Response) => {
       success: false,
       message: 'Failed to fetch influencer'
     });
+    return;
   }
 });
 
@@ -164,7 +165,7 @@ router.get('/:id/analytics', async (req: Request, res: Response) => {
     }
 
     const instagramService = new InstagramService(access_token);
-    const analytics = await instagramService.getUserAnalytics(id === 'me' ? undefined : id);
+    const analytics = await instagramService.getUserAnalytics(id === 'me' ? undefined : (id as string));
     
     res.json({
       success: true,
@@ -176,6 +177,7 @@ router.get('/:id/analytics', async (req: Request, res: Response) => {
       success: false,
       message: 'Failed to fetch analytics'
     });
+    return;
   }
 });
 
@@ -197,7 +199,7 @@ router.get('/:id/media', async (req: Request, res: Response) => {
 
     const instagramService = new InstagramService(access_token);
     const media = await instagramService.getUserMedia(
-      id === 'me' ? undefined : id, 
+      id === 'me' ? undefined : (id as string), 
       limit ? Number(limit) : 25
     );
     
@@ -212,6 +214,7 @@ router.get('/:id/media', async (req: Request, res: Response) => {
       success: false,
       message: 'Failed to fetch media'
     });
+    return;
   }
 });
 
@@ -243,6 +246,7 @@ router.post('/search/hashtag', async (req: Request, res: Response) => {
       success: false,
       message: 'Failed to search hashtag'
     });
+    return;
   }
 });
 
@@ -284,6 +288,7 @@ router.put('/:id/rates', async (req: Request, res: Response) => {
       success: false,
       message: 'Failed to update influencer rates'
     });
+    return;
   }
 });
 

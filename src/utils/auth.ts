@@ -50,7 +50,7 @@ export function isOTPExpired(expiry: Date): boolean {
 }
 
 // Generate JWT payload for user
-export interface JWTPayload {
+export interface JWTPayload extends jwt.JwtPayload {
   userId: string;
   email: string;
   role: string;
