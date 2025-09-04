@@ -29,9 +29,8 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
         message: 'Invalid or expired token'
       });
     }
-    
     req.user = decoded as AuthRequest['user'];
-    next();
+    return next();
   });
 };
 
@@ -51,6 +50,6 @@ export const requireRole = (roles: string[]) => {
       });
     }
 
-    next();
+    return next();
   };
 };

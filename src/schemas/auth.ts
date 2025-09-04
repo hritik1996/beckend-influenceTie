@@ -27,11 +27,7 @@ export const registerSchema = z.object({
     .regex(/^[+]?[1-9]\d{1,14}$/, 'Valid phone number required')
     .optional(),
   
-  role: z
-    .enum(['INFLUENCER', 'BRAND'], {
-      errorMap: () => ({ message: 'Role must be either INFLUENCER or BRAND' })
-    })
-    .default('INFLUENCER'),
+  role: z.enum(['INFLUENCER', 'BRAND']).default('INFLUENCER'),
   
   // Optional fields for different user types
   companyName: z

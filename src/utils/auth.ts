@@ -17,16 +17,18 @@ export async function verifyPassword(password: string, hashedPassword: string): 
 }
 
 // JWT token generation
-export function generateJWT(payload: object): string {
-  return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: JWT_EXPIRES_IN,
-  });
+export function generateJWT(payload: Record<string, unknown>): string {
+  const secret: jwt.Secret = JWT_SECRET as jwt.Secret;
+  // jwt.SignOptions.expiresIn expects number (seconds) or string like '7d'
+  const options: jwt.SignOptions = { expiresIn: JWT_EXPIRES_IN as unknown as jwt.SignOptions['expiresIn'] };
+  return jwt.sign(payload, secret, options);
 }
 
 // JWT token verification
 export function verifyJWT(token: string): any {
   try {
-    return jwt.verify(token, JWT_SECRET);
+    const secret: jwt.Secret = JWT_SECRET as jwt.Secret;
+    return jwt.verify(token, secret);
   } catch (error) {
     throw new Error('Invalid or expired token');
   }
