@@ -23,22 +23,24 @@ let connectedInfluencers: Map<string, InfluencerProfile> = new Map();
  * GET /api/influencers
  * Get all connected influencers
  */
-router.get('/', async (_req: Request, res: Response) => {
+router.get('/', async (_req: Request, res: Response): Promise<void> => {
   try {
     const influencers = Array.from(connectedInfluencers.values());
     
-    return res.json({
+    res.json({
       success: true,
       data: influencers,
       total: influencers.length,
       message: 'Connected influencers retrieved successfully'
     });
+    return;
   } catch (error) {
     console.error('Error fetching influencers:', error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: 'Failed to fetch influencers'
     });
+    return;
   }
 });
 
@@ -46,28 +48,31 @@ router.get('/', async (_req: Request, res: Response) => {
  * GET /api/influencers/:id
  * Get specific influencer profile with detailed analytics
  */
-router.get('/:id', async (req: Request<{ id: string }>, res: Response) => {
+router.get('/:id', async (req: Request<{ id: string }>, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const influencer = connectedInfluencers.get(id);
     
     if (!influencer) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         message: 'Influencer not found'
       });
+      return;
     }
 
-    return res.json({
+    res.json({
       success: true,
       data: influencer
     });
+    return;
   } catch (error) {
     console.error('Error fetching influencer:', error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: 'Failed to fetch influencer'
     });
+    return;
   }
 });
 
@@ -75,7 +80,7 @@ router.get('/:id', async (req: Request<{ id: string }>, res: Response) => {
  * POST /api/influencers/connect
  * Connect an Instagram account using access token
  */
-router.post('/connect', async (req: Request, res: Response) => {
+router.post('/connect', async (req: Request, res: Response): Promise<void> => {
   try {
     const { access_token, user_id } = connectInstagramSchema.parse(req.body);
     
@@ -84,11 +89,12 @@ router.post('/connect', async (req: Request, res: Response) => {
     // Validate the token and get user analytics
     const validation = await instagramService.validateToken();
     if (!validation.valid) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'Invalid Instagram access token',
         error: validation.error
       });
+      return;
     }
 
     // Get comprehensive user analytics
@@ -121,7 +127,7 @@ router.post('/connect', async (req: Request, res: Response) => {
     // Store in memory (replace with database)
     connectedInfluencers.set(influencerProfile.id, influencerProfile);
 
-    return res.json({
+    res.json({
       success: true,
       data: {
         profile: influencerProfile,
@@ -130,20 +136,23 @@ router.post('/connect', async (req: Request, res: Response) => {
       },
       message: 'Instagram account connected successfully'
     });
+    return;
   } catch (error) {
     console.error('Error connecting Instagram account:', error);
     if (error instanceof z.ZodError) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'Invalid request data',
         errors: error.issues
       });
+      return;
     }
     
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: 'Failed to connect Instagram account'
     });
+    return;
   }
 });
 
@@ -151,31 +160,34 @@ router.post('/connect', async (req: Request, res: Response) => {
  * GET /api/influencers/:id/analytics
  * Get detailed analytics for a connected influencer
  */
-router.get('/:id/analytics', async (req: Request<{ id: string }>, res: Response) => {
+router.get('/:id/analytics', async (req: Request<{ id: string }>, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const { access_token } = req.query;
     
     if (!access_token || typeof access_token !== 'string') {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'Instagram access token is required'
       });
+      return;
     }
 
     const instagramService = new InstagramService(access_token);
     const analytics = await instagramService.getUserAnalytics(id === 'me' ? undefined : (id as string));
     
-    return res.json({
+    res.json({
       success: true,
       data: analytics
     });
+    return;
   } catch (error) {
     console.error('Error fetching analytics:', error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: 'Failed to fetch analytics'
     });
+    return;
   }
 });
 
@@ -183,16 +195,17 @@ router.get('/:id/analytics', async (req: Request<{ id: string }>, res: Response)
  * GET /api/influencers/:id/media
  * Get Instagram media/posts for a connected influencer
  */
-router.get('/:id/media', async (req: Request<{ id: string }>, res: Response) => {
+router.get('/:id/media', async (req: Request<{ id: string }>, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const { access_token, limit } = req.query;
     
     if (!access_token || typeof access_token !== 'string') {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'Instagram access token is required'
       });
+      return;
     }
 
     const instagramService = new InstagramService(access_token);
@@ -201,17 +214,19 @@ router.get('/:id/media', async (req: Request<{ id: string }>, res: Response) => 
       limit ? Number(limit) : 25
     );
     
-    return res.json({
+    res.json({
       success: true,
       data: media,
       total: media.length
     });
+    return;
   } catch (error) {
     console.error('Error fetching media:', error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: 'Failed to fetch media'
     });
+    return;
   }
 });
 
@@ -219,30 +234,33 @@ router.get('/:id/media', async (req: Request<{ id: string }>, res: Response) => 
  * POST /api/influencers/search/hashtag
  * Search for content by hashtag (limited functionality)
  */
-router.post('/search/hashtag', async (req: Request, res: Response) => {
+router.post('/search/hashtag', async (req: Request, res: Response): Promise<void> => {
   try {
     const { query, access_token } = req.body;
     
     if (!access_token || !query) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'Access token and hashtag query are required'
       });
+      return;
     }
 
     const instagramService = new InstagramService(access_token);
     const hashtagInfo = await instagramService.getHashtagInfo(query.replace('#', ''));
     
-    return res.json({
+    res.json({
       success: true,
       data: hashtagInfo
     });
+    return;
   } catch (error) {
     console.error('Error searching hashtag:', error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: 'Failed to search hashtag'
     });
+    return;
   }
 });
 
@@ -250,17 +268,18 @@ router.post('/search/hashtag', async (req: Request, res: Response) => {
  * PUT /api/influencers/:id/rates
  * Update influencer's rates manually
  */
-router.put('/:id/rates', async (req: Request<{ id: string }>, res: Response) => {
+router.put('/:id/rates', async (req: Request<{ id: string }>, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const { rate_per_post, rate_per_story, categories, email, phone } = req.body;
     
     const influencer = connectedInfluencers.get(id);
     if (!influencer) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         message: 'Influencer not found'
       });
+      return;
     }
 
     // Update the influencer profile
@@ -273,17 +292,19 @@ router.put('/:id/rates', async (req: Request<{ id: string }>, res: Response) => 
 
     connectedInfluencers.set(id, influencer);
 
-    return res.json({
+    res.json({
       success: true,
       data: influencer,
       message: 'Influencer rates updated successfully'
     });
+    return;
   } catch (error) {
     console.error('Error updating influencer rates:', error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: 'Failed to update influencer rates'
     });
+    return;
   }
 });
 
