@@ -27,7 +27,7 @@ router.get('/', async (_req: Request, res: Response) => {
   try {
     const influencers = Array.from(connectedInfluencers.values());
     
-    res.json({
+    return res.json({
       success: true,
       data: influencers,
       total: influencers.length,
@@ -35,7 +35,7 @@ router.get('/', async (_req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error fetching influencers:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to fetch influencers'
     });
@@ -46,7 +46,7 @@ router.get('/', async (_req: Request, res: Response) => {
  * GET /api/influencers/:id
  * Get specific influencer profile with detailed analytics
  */
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', async (req: Request<{ id: string }>, res: Response) => {
   try {
     const { id } = req.params;
     const influencer = connectedInfluencers.get(id);
@@ -58,17 +58,16 @@ router.get('/:id', async (req: Request, res: Response) => {
       });
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: influencer
     });
   } catch (error) {
     console.error('Error fetching influencer:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to fetch influencer'
     });
-    return;
   }
 });
 
@@ -122,7 +121,7 @@ router.post('/connect', async (req: Request, res: Response) => {
     // Store in memory (replace with database)
     connectedInfluencers.set(influencerProfile.id, influencerProfile);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         profile: influencerProfile,
@@ -141,7 +140,7 @@ router.post('/connect', async (req: Request, res: Response) => {
       });
     }
     
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to connect Instagram account'
     });
@@ -152,7 +151,7 @@ router.post('/connect', async (req: Request, res: Response) => {
  * GET /api/influencers/:id/analytics
  * Get detailed analytics for a connected influencer
  */
-router.get('/:id/analytics', async (req: Request, res: Response) => {
+router.get('/:id/analytics', async (req: Request<{ id: string }>, res: Response) => {
   try {
     const { id } = req.params;
     const { access_token } = req.query;
@@ -167,17 +166,16 @@ router.get('/:id/analytics', async (req: Request, res: Response) => {
     const instagramService = new InstagramService(access_token);
     const analytics = await instagramService.getUserAnalytics(id === 'me' ? undefined : (id as string));
     
-    res.json({
+    return res.json({
       success: true,
       data: analytics
     });
   } catch (error) {
     console.error('Error fetching analytics:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to fetch analytics'
     });
-    return;
   }
 });
 
@@ -185,7 +183,7 @@ router.get('/:id/analytics', async (req: Request, res: Response) => {
  * GET /api/influencers/:id/media
  * Get Instagram media/posts for a connected influencer
  */
-router.get('/:id/media', async (req: Request, res: Response) => {
+router.get('/:id/media', async (req: Request<{ id: string }>, res: Response) => {
   try {
     const { id } = req.params;
     const { access_token, limit } = req.query;
@@ -203,18 +201,17 @@ router.get('/:id/media', async (req: Request, res: Response) => {
       limit ? Number(limit) : 25
     );
     
-    res.json({
+    return res.json({
       success: true,
       data: media,
       total: media.length
     });
   } catch (error) {
     console.error('Error fetching media:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to fetch media'
     });
-    return;
   }
 });
 
@@ -236,17 +233,16 @@ router.post('/search/hashtag', async (req: Request, res: Response) => {
     const instagramService = new InstagramService(access_token);
     const hashtagInfo = await instagramService.getHashtagInfo(query.replace('#', ''));
     
-    res.json({
+    return res.json({
       success: true,
       data: hashtagInfo
     });
   } catch (error) {
     console.error('Error searching hashtag:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to search hashtag'
     });
-    return;
   }
 });
 
@@ -254,7 +250,7 @@ router.post('/search/hashtag', async (req: Request, res: Response) => {
  * PUT /api/influencers/:id/rates
  * Update influencer's rates manually
  */
-router.put('/:id/rates', async (req: Request, res: Response) => {
+router.put('/:id/rates', async (req: Request<{ id: string }>, res: Response) => {
   try {
     const { id } = req.params;
     const { rate_per_post, rate_per_story, categories, email, phone } = req.body;
@@ -277,18 +273,17 @@ router.put('/:id/rates', async (req: Request, res: Response) => {
 
     connectedInfluencers.set(id, influencer);
 
-    res.json({
+    return res.json({
       success: true,
       data: influencer,
       message: 'Influencer rates updated successfully'
     });
   } catch (error) {
     console.error('Error updating influencer rates:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to update influencer rates'
     });
-    return;
   }
 });
 
