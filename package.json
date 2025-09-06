@@ -11,11 +11,8 @@
     "db:create": "node scripts/create-database.js",
     "db:setup": "node scripts/setup-database.js",
     "db:reset": "node scripts/reset-database.js",
-    "railway:deploy": "railway up",
-    "railway:logs": "railway logs",
-    "railway:env": "railway variables",
-    "prestart": "npm run build",
-    "postbuild": "echo 'Build complete! Ready for production.'"
+    "docker:build": "docker build -t influencetie-backend .",
+    "docker:run": "docker run -p 4000:4000 --env-file .env influencetie-backend"
   },
   "keywords": [],
   "author": "",
