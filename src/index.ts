@@ -23,8 +23,20 @@ import { registerApiRoutes } from './api';
 import { testDatabaseConnection, disconnectDatabase } from './lib/database';
 
 const app = express();
-const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:5173';
-app.use(cors({ origin: corsOrigin, credentials: true }));
+
+// CORS configuration - support multiple origins for production and development
+const corsOrigins = process.env.CORS_ORIGIN 
+  ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+  : process.env.NODE_ENV === 'production' 
+    ? ['https://www.influencetie.com', 'https://influencetie.com']
+    : ['http://localhost:5173', 'http://localhost:3000'];
+
+app.use(cors({ 
+  origin: corsOrigins, 
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 app.use(express.json());
 app.use(morgan('dev'));
