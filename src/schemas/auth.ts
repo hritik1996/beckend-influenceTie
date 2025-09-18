@@ -12,15 +12,21 @@ export const registerSchema = z.object({
     .min(8, 'Password must be at least 8 characters')
     .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Password must contain at least one lowercase letter, one uppercase letter, and one number'),
   
+  // For influencer: first/last required. For brand: optional.
   firstName: z
     .string()
     .min(2, 'First name must be at least 2 characters')
-    .max(50, 'First name must not exceed 50 characters'),
+    .max(50, 'First name must not exceed 50 characters')
+    .optional(),
   
   lastName: z
     .string()
     .min(2, 'Last name must be at least 2 characters')
-    .max(50, 'Last name must not exceed 50 characters'),
+    .max(50, 'Last name must not exceed 50 characters')
+    .optional(),
+
+  // Optional full name (frontend may send this instead of first/last)
+  fullName: z.string().min(2).max(100).optional(),
   
   phone: z
     .string()
@@ -39,7 +45,20 @@ export const registerSchema = z.object({
     .string()
     .regex(/^[a-zA-Z0-9_]{1,30}$/, 'Instagram handle must be valid (alphanumeric and underscore only)')
     .optional(),
-});
+})
+  .refine((data) => data.role !== 'BRAND' || !!data.companyName, {
+  path: ['companyName'],
+  message: 'Company name is required for brand accounts',
+})
+  .refine((data) => {
+    if (data.role === 'INFLUENCER') {
+      return !!(data.firstName && data.lastName) || !!data.fullName;
+    }
+    return true;
+  }, {
+    path: ['firstName'],
+    message: 'First and last name (or full name) are required for influencers',
+  });
 
 // Login schema
 export const loginSchema = z.object({
@@ -54,14 +73,15 @@ export const loginSchema = z.object({
 
 // OTP verification schema
 export const otpSchema = z.object({
-  email: z
-    .string()
-    .email('Valid email address required'),
-  
+  email: z.string().email('Valid email address required').optional(),
+  phone: z.string().regex(/^[+]?[1-9]\d{1,14}$/, 'Valid phone number required').optional(),
   otp: z
     .string()
     .length(6, 'OTP must be exactly 6 digits')
     .regex(/^\d{6}$/, 'OTP must contain only numbers'),
+}).refine((d) => !!d.email || !!d.phone, {
+  message: 'Email or phone is required',
+  path: ['email'],
 });
 
 // Password reset request schema

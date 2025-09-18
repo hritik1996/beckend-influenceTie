@@ -1,13 +1,27 @@
-import { Router, Request, Response } from 'express';
+import { Router, Response } from 'express';
+import { authenticateToken, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
-router.get('/threads', (_req: Request, res: Response) => {
-  res.json({ threads: [] });
+// Apply authentication middleware to all message routes
+router.use(authenticateToken);
+
+router.get('/threads', (req: AuthRequest, res: Response) => {
+  // TODO: Fetch user's message threads from database
+  res.json({ 
+    success: true,
+    data: { threads: [] },
+    message: 'Message threads retrieved successfully'
+  });
 });
 
-router.get('/threads/:id', (req: Request, res: Response) => {
-  res.json({ id: req.params.id, messages: [] });
+router.get('/threads/:id', (req: AuthRequest & { params: { id: string } }, res: Response) => {
+  // TODO: Fetch specific thread messages from database
+  res.json({ 
+    success: true,
+    data: { id: req.params.id, messages: [] },
+    message: 'Thread messages retrieved successfully'
+  });
 });
 
 export default router;

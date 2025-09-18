@@ -1,10 +1,28 @@
-import { Router, Request, Response } from 'express';
+import { Router } from 'express';
+import { authenticateToken } from '../middleware/auth';
+import { 
+  getUserProfile, 
+  updateUserProfile, 
+  changePassword, 
+  deleteUserAccount, 
+  getUserStats 
+} from '../controllers/users';
 
 const router = Router();
 
-router.get('/me', (_req: Request, res: Response) => {
-  res.json({ id: 'user_1', role: 'influencer', name: 'Demo User' });
-});
+// Apply authentication middleware to all user routes
+router.use(authenticateToken);
+
+// User profile management
+router.get('/me', getUserProfile);
+router.put('/me', updateUserProfile);
+router.delete('/me', deleteUserAccount);
+
+// Password management
+router.post('/change-password', changePassword);
+
+// User statistics (for influencers)
+router.get('/stats', getUserStats);
 
 export default router;
 

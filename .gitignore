@@ -34,3 +34,21 @@ Dockerfile
 **/package-lock.json
 **/pnpm-lock.yaml
 **/yarn.lock
+
+# TypeScript & tooling
+tsconfig.tsbuildinfo
+.eslintcache
+.nyc_output/
+
+# Local data/uploads
+uploads/
+tmp/
+
+# Prisma local SQLite (if used)
+prisma/*.db
+prisma/*.db-journal
+
+# Archives and misc
+*.tgz
+nohup.out
+docker-compose.override.yml

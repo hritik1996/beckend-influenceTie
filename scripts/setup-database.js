@@ -3,14 +3,33 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
-// Database configuration
-const dbConfig = {
+// Database configuration - matches main app configuration
+const shouldUseSsl = (() => {
+  const dbSslFlag = (process.env.DB_SSL || '').toLowerCase();
+  if (dbSslFlag === 'true' || dbSslFlag === '1') return true;
+  if (process.env.NODE_ENV === 'production') return true;
+  if ((process.env.DATABASE_URL || '').toLowerCase().includes('sslmode=require')) return true;
+  return false;
+})();
+
+const dbConfig = process.env.DATABASE_URL ? {
+  // Connection string style (RDS/Cloud providers)
+  connectionString: process.env.DATABASE_URL,
+  ssl: shouldUseSsl ? { rejectUnauthorized: false } : false,
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
+} : {
+  // Manual configuration for local environments
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '5432'),
   database: process.env.DB_NAME || 'influencetie_db',
   user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || '',
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  password: process.env.DB_PASS || process.env.DB_PASSWORD || '',
+  ssl: shouldUseSsl ? { rejectUnauthorized: false } : false,
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
 };
 
 async function setupDatabase() {

@@ -22,14 +22,21 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
 
   const jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
   
-  jwt.verify(token, jwtSecret, (err, decoded) => {
+  jwt.verify(token, jwtSecret, (err, decoded: any) => {
     if (err) {
       return res.status(403).json({
         success: false,
         message: 'Invalid or expired token'
       });
     }
-    req.user = decoded as AuthRequest['user'];
+    
+    // Map JWT payload to expected user structure
+    req.user = {
+      id: decoded.userId, // Map userId to id
+      email: decoded.email,
+      role: decoded.role
+    };
+    
     return next();
   });
 };

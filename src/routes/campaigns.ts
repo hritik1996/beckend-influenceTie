@@ -1,18 +1,32 @@
-import { Router, Request, Response } from 'express';
+import { Router } from 'express';
+import { authenticateToken } from '../middleware/auth';
+import {
+  createCampaign,
+  getCampaigns,
+  getCampaignById,
+  updateCampaign,
+  deleteCampaign,
+  applyToCampaign,
+  getCampaignApplications,
+  handleApplication
+} from '../controllers/campaigns';
 
 const router = Router();
 
-router.get('/', (_req: Request, res: Response) => {
-  res.json({ items: [], total: 0 });
-});
+// Apply authentication middleware to all campaign routes
+router.use(authenticateToken);
 
-router.post('/', (req: Request, res: Response) => {
-  res.status(201).json({ id: 'cmp_1', ...req.body });
-});
+// Campaign CRUD operations
+router.post('/', createCampaign);                    // Create campaign (Brand)
+router.get('/', getCampaigns);                       // Get campaigns with filters
+router.get('/:id', getCampaignById);                 // Get specific campaign
+router.put('/:id', updateCampaign);                  // Update campaign (Brand owner)
+router.delete('/:id', deleteCampaign);               // Delete campaign (Brand owner)
 
-router.get('/:id', (req: Request, res: Response) => {
-  res.json({ id: req.params.id, status: 'Draft' });
-});
+// Campaign applications
+router.post('/:id/apply', applyToCampaign);          // Apply to campaign (Influencer)
+router.get('/:id/applications', getCampaignApplications); // Get applications (Brand owner)
+router.put('/:campaignId/applications/:applicationId', handleApplication); // Accept/Reject (Brand owner)
 
 export default router;
 

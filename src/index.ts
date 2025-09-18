@@ -1,17 +1,13 @@
+import dotenv from 'dotenv';
+// Load environment variables BEFORE importing any modules that depend on them
+dotenv.config();
+
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import morgan from 'morgan';
 
-import authRouter from './routes/auth';
-import usersRouter from './routes/users';
-import influencersRouter from './routes/influencers';
-import campaignsRouter from './routes/campaigns';
-import messagesRouter from './routes/messages';
-import adminRouter from './routes/admin';
+import { registerApiRoutes } from './api';
 import { testDatabaseConnection, disconnectDatabase } from './lib/database';
-
-dotenv.config();
 
 const app = express();
 const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:5173';
@@ -24,12 +20,7 @@ app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', service: 'InfluenceTie API' });
 });
 
-app.use('/api/auth', authRouter);
-app.use('/api/users', usersRouter);
-app.use('/api/influencers', influencersRouter);
-app.use('/api/campaigns', campaignsRouter);
-app.use('/api/messages', messagesRouter);
-app.use('/api/admin', adminRouter);
+registerApiRoutes(app);
 
 // Basic error handler
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
@@ -46,17 +37,7 @@ const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
 // Start server with database connection test
 async function startServer() {
   try {
-    // Railway-specific database setup
-    if (process.env.RAILWAY_ENVIRONMENT) {
-      console.log('🚂 Railway environment detected');
-      try {
-        const { setupRailwayDatabase } = require('../scripts/railway-setup.js');
-        await setupRailwayDatabase();
-      } catch (setupError) {
-        const message = setupError instanceof Error ? setupError.message : String(setupError);
-        console.log('Database setup skipped:', message);
-      }
-    }
+    // Railway-specific database setup removed
     
     // Test database connection
     const isDbConnected = await testDatabaseConnection();

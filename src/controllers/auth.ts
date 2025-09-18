@@ -4,9 +4,13 @@ import {
   registerSchema, 
   loginSchema, 
   otpSchema,
+  resetPasswordRequestSchema,
+  resetPasswordSchema,
   RegisterInput,
   LoginInput,
-  OtpInput 
+  OtpInput,
+  ResetPasswordRequestInput,
+  ResetPasswordInput
 } from '../schemas/auth';
 import { 
   hashPassword, 
@@ -25,6 +29,16 @@ import {
   ERROR_MESSAGES 
 } from '../utils/response';
 import { ZodError, ZodIssue } from 'zod';
+import {
+  SELECT_USER_DUPLICATE_CHECK,
+  INSERT_USER,
+  SELECT_USER_BY_EMAIL_FOR_LOGIN,
+  UPDATE_USER_LAST_LOGIN,
+  SELECT_USER_EMAIL_OTP,
+  UPDATE_USER_VERIFY_EMAIL,
+  UPDATE_USER_SET_OTP,
+} from '../queries/auth';
+import { UPDATE_USER_CLEAR_OTP, UPDATE_USER_PASSWORD } from '../queries/auth';
 
 // User Registration
 export async function register(req: Request, res: Response) {
@@ -33,15 +47,7 @@ export async function register(req: Request, res: Response) {
     const validatedData: RegisterInput = registerSchema.parse(req.body);
     
     // Check if user already exists
-    const existingUserQuery = `
-      SELECT id, email, phone, instagram_handle 
-      FROM users 
-      WHERE email = $1 
-         OR ($2::text IS NOT NULL AND phone = $2) 
-         OR ($3::text IS NOT NULL AND instagram_handle = $3)
-    `;
-    
-    const existingUserResult = await query(existingUserQuery, [
+    const existingUserResult = await query(SELECT_USER_DUPLICATE_CHECK, [
       validatedData.email,
       validatedData.phone || null,
       validatedData.instagramHandle || null
@@ -68,22 +74,14 @@ export async function register(req: Request, res: Response) {
     const otpExpiry = generateOTPExpiry();
 
     // Create user
-    const createUserQuery = `
-      INSERT INTO users (
-        email, password, first_name, last_name, phone, role, 
-        company_name, instagram_handle, otp, otp_expiry
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-      RETURNING id, email, first_name, last_name, role, is_email_verified, created_at
-    `;
-
-    const newUserResult = await query(createUserQuery, [
+    const newUserResult = await query(INSERT_USER, [
       validatedData.email,
       hashedPassword,
       validatedData.firstName,
       validatedData.lastName,
       validatedData.phone || null,
       validatedData.role,
-      validatedData.companyName || null,
+      validatedData.role === 'BRAND' ? (validatedData.companyName || null) : null,
       validatedData.instagramHandle || null,
       otp,
       otpExpiry
@@ -143,14 +141,7 @@ export async function login(req: Request, res: Response) {
     const validatedData: LoginInput = loginSchema.parse(req.body);
     
     // Find user by email
-    const findUserQuery = `
-      SELECT id, email, password, first_name, last_name, role, 
-             is_email_verified, is_phone_verified
-      FROM users 
-      WHERE email = $1
-    `;
-    
-    const userResult = await query(findUserQuery, [validatedData.email]);
+    const userResult = await query(SELECT_USER_BY_EMAIL_FOR_LOGIN, [validatedData.email]);
 
     if (userResult.rows.length === 0) {
       return errorResponse(res, ERROR_MESSAGES.INVALID_CREDENTIALS, HTTP_STATUS.UNAUTHORIZED);
@@ -165,12 +156,7 @@ export async function login(req: Request, res: Response) {
     }
 
     // Update last login
-    const updateLoginQuery = `
-      UPDATE users 
-      SET last_login_at = CURRENT_TIMESTAMP 
-      WHERE id = $1
-    `;
-    await query(updateLoginQuery, [user.id]);
+    await query(UPDATE_USER_LAST_LOGIN, [user.id]);
 
     // Generate JWT token
     const jwtPayload = createJWTPayload({
@@ -217,14 +203,8 @@ export async function verifyOTP(req: Request, res: Response) {
     // Validate input
     const validatedData: OtpInput = otpSchema.parse(req.body);
     
-    // Find user by email
-    const findUserQuery = `
-      SELECT id, email, otp, otp_expiry, is_email_verified
-      FROM users 
-      WHERE email = $1
-    `;
-    
-    const userResult = await query(findUserQuery, [validatedData.email]);
+    // Find user by email (phone support can be added similarly later)
+    const userResult = await query(SELECT_USER_EMAIL_OTP, [validatedData.email]);
 
     if (userResult.rows.length === 0) {
       return errorResponse(res, ERROR_MESSAGES.USER_NOT_FOUND, HTTP_STATUS.NOT_FOUND);
@@ -247,12 +227,7 @@ export async function verifyOTP(req: Request, res: Response) {
     }
 
     // Update user as email verified and clear OTP
-    const updateUserQuery = `
-      UPDATE users 
-      SET is_email_verified = TRUE, otp = NULL, otp_expiry = NULL 
-      WHERE id = $1
-    `;
-    await query(updateUserQuery, [user.id]);
+    await query(UPDATE_USER_VERIFY_EMAIL, [user.id]);
 
     return successResponse(res, 'Email verified successfully');
 
@@ -289,13 +264,7 @@ export async function resendOTP(req: Request, res: Response) {
     }
 
     // Find user
-    const findUserQuery = `
-      SELECT id, email, is_email_verified
-      FROM users 
-      WHERE email = $1
-    `;
-    
-    const userResult = await query(findUserQuery, [email]);
+    const userResult = await query(SELECT_USER_EMAIL_OTP, [email]);
 
     if (userResult.rows.length === 0) {
       return errorResponse(res, ERROR_MESSAGES.USER_NOT_FOUND, HTTP_STATUS.NOT_FOUND);
@@ -312,12 +281,7 @@ export async function resendOTP(req: Request, res: Response) {
     const otpExpiry = generateOTPExpiry();
 
     // Update user with new OTP
-    const updateOtpQuery = `
-      UPDATE users 
-      SET otp = $1, otp_expiry = $2 
-      WHERE id = $3
-    `;
-    await query(updateOtpQuery, [otp, otpExpiry, user.id]);
+    await query(UPDATE_USER_SET_OTP, [otp, otpExpiry, user.id]);
 
     // TODO: Send OTP via email (implement later)
     console.log(`New OTP for ${email}: ${otp}`);
@@ -331,5 +295,54 @@ export async function resendOTP(req: Request, res: Response) {
       ERROR_MESSAGES.INTERNAL_ERROR, 
       HTTP_STATUS.INTERNAL_SERVER_ERROR
     );
+  }
+}
+
+// Request password reset (send OTP to email)
+export async function requestPasswordReset(req: Request, res: Response) {
+  try {
+    const data: ResetPasswordRequestInput = resetPasswordRequestSchema.parse(req.body);
+    const userResult = await query(SELECT_USER_EMAIL_OTP, [data.email]);
+    if (userResult.rows.length === 0) {
+      return errorResponse(res, ERROR_MESSAGES.USER_NOT_FOUND, HTTP_STATUS.NOT_FOUND);
+    }
+    const user = userResult.rows[0];
+
+    const otp = generateOTP();
+    const otpExpiry = generateOTPExpiry();
+    await query(UPDATE_USER_SET_OTP, [otp, otpExpiry, user.id]);
+    return successResponse(res, 'Password reset OTP sent');
+  } catch (error) {
+    console.error('Request password reset error:', error);
+    return errorResponse(res, ERROR_MESSAGES.INTERNAL_ERROR, HTTP_STATUS.INTERNAL_SERVER_ERROR);
+  }
+}
+
+// Reset password using OTP
+export async function resetPassword(req: Request, res: Response) {
+  try {
+    const data: ResetPasswordInput = resetPasswordSchema.parse(req.body);
+    const userResult = await query(SELECT_USER_EMAIL_OTP, [data.email]);
+    if (userResult.rows.length === 0) {
+      return errorResponse(res, ERROR_MESSAGES.USER_NOT_FOUND, HTTP_STATUS.NOT_FOUND);
+    }
+    const user = userResult.rows[0];
+    if (!user.otp || !user.otp_expiry) {
+      return errorResponse(res, ERROR_MESSAGES.INVALID_OTP, HTTP_STATUS.BAD_REQUEST);
+    }
+    if (isOTPExpired(new Date(user.otp_expiry))) {
+      return errorResponse(res, ERROR_MESSAGES.OTP_EXPIRED, HTTP_STATUS.BAD_REQUEST);
+    }
+    if (user.otp !== data.otp) {
+      return errorResponse(res, ERROR_MESSAGES.INVALID_OTP, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    const newHashed = await hashPassword(data.newPassword);
+    await query(UPDATE_USER_PASSWORD, [newHashed, user.id]);
+    await query(UPDATE_USER_CLEAR_OTP, [user.id]);
+    return successResponse(res, 'Password reset successfully');
+  } catch (error) {
+    console.error('Reset password error:', error);
+    return errorResponse(res, ERROR_MESSAGES.INTERNAL_ERROR, HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 }
