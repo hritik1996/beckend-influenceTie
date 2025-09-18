@@ -1,5 +1,12 @@
 import { Pool, PoolClient } from 'pg';
 
+// Safely read database password from multiple env vars and coerce to string
+function resolveDbPassword(): string | undefined {
+  const raw = process.env.DB_PASS ?? process.env.DB_PASSWORD ?? process.env.PGPASSWORD;
+  if (raw === undefined || raw === null) return undefined;
+  return String(raw);
+}
+
 // Decide when to enable SSL for the database connection.
 // - Always enable for production
 // - Enable if DB_SSL=true
@@ -16,6 +23,8 @@ const shouldUseSsl: boolean = (() => {
 const dbConfig = process.env.DATABASE_URL ? {
   // Connection string style (RDS/Cloud providers)
   connectionString: process.env.DATABASE_URL,
+  // Allow overriding/setting password via env if connection string is missing/incorrect
+  password: resolveDbPassword(),
   ssl: shouldUseSsl ? { rejectUnauthorized: false } : false,
   max: 20,
   idleTimeoutMillis: 30000,
@@ -26,7 +35,8 @@ const dbConfig = process.env.DATABASE_URL ? {
   port: parseInt(process.env.DB_PORT || '5432'),
   database: process.env.DB_NAME || 'influencetie_db',
   user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASS || process.env.DB_PASSWORD || '',
+  // Coerce to string and support PGPASSWORD
+  password: resolveDbPassword() ?? '',
   ssl: shouldUseSsl ? { rejectUnauthorized: false } : false,
   max: 20,
   idleTimeoutMillis: 30000,

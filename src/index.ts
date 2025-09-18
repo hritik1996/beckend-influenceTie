@@ -1,6 +1,19 @@
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
 // Load environment variables BEFORE importing any modules that depend on them
-dotenv.config();
+// Try default CWD first; if nothing is loaded (e.g., running from dist), try project root
+const primaryEnv = dotenv.config();
+if (!primaryEnv.parsed) {
+  try {
+    const fallbackEnvPath = path.resolve(__dirname, '../.env');
+    if (fs.existsSync(fallbackEnvPath)) {
+      dotenv.config({ path: fallbackEnvPath });
+    }
+  } catch (_err) {
+    // ignore fallback env load errors
+  }
+}
 
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
