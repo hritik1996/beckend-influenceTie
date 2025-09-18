@@ -19,9 +19,9 @@ const createCampaignSchema = z.object({
   requirements: z.string().optional(),
   startDate: z.string(), // ISO date string
   endDate: z.string(), // ISO date string
-  requirementsJson: z.record(z.any()).optional(),
-  targetAudience: z.record(z.any()).optional(),
-  contentGuidelines: z.record(z.any()).optional()
+  requirementsJson: z.record(z.string(), z.any()).optional(),
+  targetAudience: z.record(z.string(), z.any()).optional(),
+  contentGuidelines: z.record(z.string(), z.any()).optional()
 });
 
 const updateCampaignSchema = createCampaignSchema.partial().omit({ budget: true });
