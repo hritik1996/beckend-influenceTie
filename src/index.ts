@@ -28,7 +28,14 @@ const app = express();
 const corsOrigins = process.env.CORS_ORIGIN 
   ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
   : process.env.NODE_ENV === 'production' 
-    ? ['https://www.influencetie.com', 'https://influencetie.com']
+    ? (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+        // Allow all influencetie.com subdomains and both HTTP/HTTPS
+        if (!origin || /^https?:\/\/(.*\.)?influencetie\.com$/.test(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      }
     : ['http://localhost:5173', 'http://localhost:3000'];
 
 app.use(cors({ 
