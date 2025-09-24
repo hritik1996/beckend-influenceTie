@@ -2,6 +2,7 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { query } from '../lib/database';
 import { generateJWT, createJWTPayload } from '../utils/auth';
+import { ROLES } from '../constants';
 
 // Configure Google OAuth Strategy
 passport.use(
@@ -58,7 +59,7 @@ passport.use(
               is_email_verified, role, created_at, updated_at
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             RETURNING *`,
-            [email, firstName, lastName, googleId, profilePicture, true, 'influencer']
+            [email, firstName, lastName, googleId, profilePicture, true, ROLES.INFLUENCER]
           );
 
           user = insertResult.rows[0];
