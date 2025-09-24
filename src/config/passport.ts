@@ -53,12 +53,13 @@ passport.use(
           user.google_id = googleId;
           user.profile_picture = profilePicture;
         } else {
-          // Get role from session (stored during /google route)
-          const signupRole = (req.session as any)?.signupRole;
-          const pendingRole = (signupRole && (signupRole === 'BRAND' || signupRole === 'INFLUENCER')) 
-            ? signupRole 
+          // Get role from state parameter (passed during OAuth flow)
+          const stateRole = req.query?.state as string;
+          const pendingRole = (stateRole && (stateRole === 'BRAND' || stateRole === 'INFLUENCER')) 
+            ? stateRole 
             : ROLES.INFLUENCER;
           
+          console.log('🔍 State role from OAuth:', stateRole);
           console.log('🆕 Creating new user with role:', pendingRole);
           
           // Create new user

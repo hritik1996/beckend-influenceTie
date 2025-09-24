@@ -16,18 +16,14 @@ router.get('/google',
     // Debug log
     console.log('🔍 Received role parameter:', role);
     
-    // Validate role parameter and store in session
-    if (role && (role === 'BRAND' || role === 'INFLUENCER')) {
-      // Store role in session for later use
-      (req.session as any).signupRole = role;
-      console.log('✅ Stored role in session:', (req.session as any).signupRole);
-    } else {
-      console.log('⚠️ No valid role parameter provided, will use default behavior');
-    }
+    // Validate role parameter and use as state
+    const validRole = (role && (role === 'BRAND' || role === 'INFLUENCER')) ? role : 'INFLUENCER';
+    console.log('✅ Using role as state parameter:', validRole);
     
-    // Continue with Google OAuth
+    // Continue with Google OAuth using state parameter
     passport.authenticate('google', { 
-      scope: ['profile', 'email'] 
+      scope: ['profile', 'email'],
+      state: validRole // Pass role as state parameter
     })(req, res, next);
   }
 );
@@ -37,18 +33,13 @@ router.get('/google/callback',
   (req, res) => {
     try {
       const user = req.user as any;
-      const signupRole = (req.session as any)?.signupRole;
+      const stateRole = req.query?.state as string;
       
       console.log('🔍 Google user data:', user);
-      console.log('🔍 Stored signup role:', signupRole);
+      console.log('🔍 State role from callback:', stateRole);
       
       if (!user || !user.token) {
         return res.redirect(`${process.env.FRONTEND_URL || 'https://www.influencetie.com'}/login?error=auth_failed`);
-      }
-
-      // Clear the signup role from session
-      if ((req.session as any)?.signupRole) {
-        delete (req.session as any).signupRole;
       }
 
       console.log('🚀 Redirecting to frontend with user data:', {
