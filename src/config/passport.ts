@@ -11,8 +11,9 @@ passport.use(
       clientID: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       callbackURL: process.env.GOOGLE_CALLBACK_URL!,
+      passReqToCallback: true, // Enable request object in callback
     },
-    async (accessToken, refreshToken, profile, done) => {
+    async (req, accessToken, refreshToken, profile, done) => {
       try {
         console.log('Google OAuth Profile:', {
           id: profile.id,
@@ -52,6 +53,9 @@ passport.use(
           user.google_id = googleId;
           user.profile_picture = profilePicture;
         } else {
+          // Get role from session (set during /google route)
+          const pendingRole = (req.session as any)?.pendingRole || ROLES.INFLUENCER;
+          
           // Create new user
           const insertResult = await query(
             `INSERT INTO users (
@@ -59,7 +63,7 @@ passport.use(
               is_email_verified, role, created_at, updated_at
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             RETURNING *`,
-            [email, firstName, lastName, googleId, profilePicture, true, ROLES.INFLUENCER]
+            [email, firstName, lastName, googleId, profilePicture, true, pendingRole]
           );
 
           user = insertResult.rows[0];

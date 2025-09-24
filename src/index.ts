@@ -18,6 +18,7 @@ if (!primaryEnv.parsed) {
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
+import session from 'express-session';
 import passport from './config/passport';
 
 import { registerApiRoutes } from './api';
@@ -48,6 +49,17 @@ app.use(cors({
 
 app.use(express.json());
 app.use(morgan('dev'));
+
+// Session configuration for OAuth role handling
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 10 * 60 * 1000 // 10 minutes (just for OAuth flow)
+  }
+}));
 
 // Initialize Passport
 app.use(passport.initialize());

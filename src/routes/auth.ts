@@ -10,6 +10,15 @@ router.post('/login', login);
 
 // Google OAuth routes
 router.get('/google', 
+  (req, res, next) => {
+    // Store role in session for later use
+    const role = req.query.role as string;
+    if (role && (role === 'BRAND' || role === 'INFLUENCER')) {
+      req.session = req.session || {};
+      (req.session as any).pendingRole = role;
+    }
+    next();
+  },
   passport.authenticate('google', { scope: ['profile', 'email'] })
 );
 
