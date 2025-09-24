@@ -52,12 +52,12 @@ app.use(morgan('dev'));
 
 // Session configuration for OAuth role handling
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
+  secret: process.env.SESSION_SECRET || 'your-super-secret-session-key',
   resave: false,
   saveUninitialized: false,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
-    maxAge: 10 * 60 * 1000 // 10 minutes (just for OAuth flow)
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));
 

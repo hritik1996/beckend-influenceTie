@@ -11,15 +11,25 @@ router.post('/login', login);
 // Google OAuth routes
 router.get('/google', 
   (req, res, next) => {
-    // Store role in session for later use
-    const role = req.query.role as string;
+    const { role } = req.query;
+    
+    // Debug log
+    console.log('🔍 Received role parameter:', role);
+    
+    // Validate role parameter and store in session
     if (role && (role === 'BRAND' || role === 'INFLUENCER')) {
-      req.session = req.session || {};
-      (req.session as any).pendingRole = role;
+      // Store role in session for later use
+      (req.session as any).signupRole = role;
+      console.log('✅ Stored role in session:', (req.session as any).signupRole);
+    } else {
+      console.log('⚠️ No valid role parameter provided, will use default behavior');
     }
-    next();
-  },
-  passport.authenticate('google', { scope: ['profile', 'email'] })
+    
+    // Continue with Google OAuth
+    passport.authenticate('google', { 
+      scope: ['profile', 'email'] 
+    })(req, res, next);
+  }
 );
 
 router.get('/google/callback',
@@ -27,12 +37,29 @@ router.get('/google/callback',
   (req, res) => {
     try {
       const user = req.user as any;
+      const signupRole = (req.session as any)?.signupRole;
+      
+      console.log('🔍 Google user data:', user);
+      console.log('🔍 Stored signup role:', signupRole);
+      
       if (!user || !user.token) {
         return res.redirect(`${process.env.FRONTEND_URL || 'https://www.influencetie.com'}/login?error=auth_failed`);
       }
 
+      // Clear the signup role from session
+      if ((req.session as any)?.signupRole) {
+        delete (req.session as any).signupRole;
+      }
+
+      console.log('🚀 Redirecting to frontend with user data:', {
+        id: user.id,
+        email: user.email,
+        role: user.role
+      });
+
       // Successful authentication, redirect with token
-      const redirectUrl = `${process.env.FRONTEND_URL || 'https://www.influencetie.com'}/auth/callback?token=${user.token}&user=${encodeURIComponent(JSON.stringify({
+      const frontendUrl = process.env.FRONTEND_URL || 'https://www.influencetie.com';
+      const redirectUrl = `${frontendUrl}/auth/callback?token=${user.token}&user=${encodeURIComponent(JSON.stringify({
         id: user.id,
         email: user.email,
         firstName: user.first_name,
@@ -43,7 +70,7 @@ router.get('/google/callback',
       
       res.redirect(redirectUrl);
     } catch (error) {
-      console.error('Google callback error:', error);
+      console.error('❌ Google OAuth callback error:', error);
       res.redirect(`${process.env.FRONTEND_URL || 'https://www.influencetie.com'}/login?error=callback_failed`);
     }
   }

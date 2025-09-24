@@ -53,8 +53,13 @@ passport.use(
           user.google_id = googleId;
           user.profile_picture = profilePicture;
         } else {
-          // Get role from session (set during /google route)
-          const pendingRole = (req.session as any)?.pendingRole || ROLES.INFLUENCER;
+          // Get role from session (stored during /google route)
+          const signupRole = (req.session as any)?.signupRole;
+          const pendingRole = (signupRole && (signupRole === 'BRAND' || signupRole === 'INFLUENCER')) 
+            ? signupRole 
+            : ROLES.INFLUENCER;
+          
+          console.log('🆕 Creating new user with role:', pendingRole);
           
           // Create new user
           const insertResult = await query(
@@ -67,6 +72,8 @@ passport.use(
           );
 
           user = insertResult.rows[0];
+          
+          console.log('✅ New user created with role:', user.role);
         }
 
         // Generate JWT token
