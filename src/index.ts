@@ -52,6 +52,19 @@ app.use(morgan('dev'));
 // Initialize Passport
 app.use(passport.initialize());
 
+// Backward-compat redirects for OAuth (in case an old callback URL is used)
+// Redirect /auth/google -> /api/v1/auth/google
+app.get('/auth/google', (_req: Request, res: Response) => {
+  res.redirect(302, '/api/v1/auth/google');
+});
+
+// Redirect /auth/google/callback -> /api/v1/auth/google/callback, preserving query string
+app.get('/auth/google/callback', (req: Request, res: Response) => {
+  const query = req.url.split('?')[1];
+  const redirectTo = `/api/v1/auth/google/callback${query ? `?${query}` : ''}`;
+  res.redirect(302, redirectTo);
+});
+
 app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', service: 'InfluenceTie API' });
 });
