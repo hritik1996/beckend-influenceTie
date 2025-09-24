@@ -18,6 +18,7 @@ if (!primaryEnv.parsed) {
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
+import passport from './config/passport';
 
 import { registerApiRoutes } from './api';
 import { testDatabaseConnection, disconnectDatabase } from './lib/database';
@@ -47,6 +48,9 @@ app.use(cors({
 
 app.use(express.json());
 app.use(morgan('dev'));
+
+// Initialize Passport
+app.use(passport.initialize());
 
 app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', service: 'InfluenceTie API' });

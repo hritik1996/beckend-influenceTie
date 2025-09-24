@@ -54,6 +54,7 @@ export interface JWTPayload extends jwt.JwtPayload {
   userId: string;
   email: string;
   role: string;
+  [key: string]: unknown; // Index signature for compatibility
 }
 
 export function createJWTPayload(user: { id: string; email: string; role: string }): JWTPayload {

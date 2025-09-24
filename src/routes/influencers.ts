@@ -8,7 +8,7 @@ import { z } from 'zod';
 const router = Router();
 
 // Apply authentication middleware to all influencer routes
-router.use(authenticateToken);
+router.use(authenticateToken as any);
 
 // Validation schemas
 const connectInstagramSchema = z.object({
@@ -25,7 +25,7 @@ const searchSchema = z.object({
  * GET /api/influencers
  * Get all influencers from database with optional filters
  */
-router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
+router.get('/', (async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     // Parse query parameters for filtering
     const { 
@@ -133,13 +133,13 @@ router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
     });
     return;
   }
-});
+}) as any);
 
 /**
  * GET /api/influencers/:id
  * Get specific influencer profile with detailed analytics
  */
-router.get('/:id', async (req: AuthRequest & { params: { id: string } }, res: Response): Promise<void> => {
+router.get('/:id', (async (req: AuthRequest & { params: { id: string } }, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     
@@ -213,13 +213,13 @@ router.get('/:id', async (req: AuthRequest & { params: { id: string } }, res: Re
     });
     return;
   }
-});
+}) as any);
 
 /**
  * POST /api/influencers/connect
  * Connect an Instagram account using access token
  */
-router.post('/connect', async (req: AuthRequest, res: Response): Promise<void> => {
+router.post('/connect', (async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { access_token, user_id } = connectInstagramSchema.parse(req.body);
     
@@ -340,13 +340,13 @@ router.post('/connect', async (req: AuthRequest, res: Response): Promise<void> =
     });
     return;
   }
-});
+}) as any);
 
 /**
  * GET /api/influencers/:id/analytics
  * Get detailed analytics for a connected influencer
  */
-router.get('/:id/analytics', async (req: AuthRequest & { params: { id: string } }, res: Response): Promise<void> => {
+router.get('/:id/analytics', (async (req: AuthRequest & { params: { id: string } }, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const { access_token } = req.query;
@@ -375,13 +375,13 @@ router.get('/:id/analytics', async (req: AuthRequest & { params: { id: string } 
     });
     return;
   }
-});
+}) as any);
 
 /**
  * GET /api/influencers/:id/media
  * Get Instagram media/posts for a connected influencer
  */
-router.get('/:id/media', async (req: AuthRequest & { params: { id: string } }, res: Response): Promise<void> => {
+router.get('/:id/media', (async (req: AuthRequest & { params: { id: string } }, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const { access_token, limit } = req.query;
@@ -414,13 +414,13 @@ router.get('/:id/media', async (req: AuthRequest & { params: { id: string } }, r
     });
     return;
   }
-});
+}) as any);
 
 /**
  * POST /api/influencers/search/hashtag
  * Search for content by hashtag (limited functionality)
  */
-router.post('/search/hashtag', async (req: AuthRequest, res: Response): Promise<void> => {
+router.post('/search/hashtag', (async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { query, access_token } = req.body;
     
@@ -448,13 +448,13 @@ router.post('/search/hashtag', async (req: AuthRequest, res: Response): Promise<
     });
     return;
   }
-});
+}) as any);
 
 /**
  * PUT /api/influencers/:id/rates
  * Update influencer's rates manually
  */
-router.put('/:id/rates', async (req: AuthRequest & { params: { id: string } }, res: Response): Promise<void> => {
+router.put('/:id/rates', (async (req: AuthRequest & { params: { id: string } }, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const { rate_per_post, rate_per_story, categories, email, phone } = req.body;
@@ -551,7 +551,7 @@ router.put('/:id/rates', async (req: AuthRequest & { params: { id: string } }, r
     });
     return;
   }
-});
+}) as any);
 
 export default router;
 

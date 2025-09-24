@@ -50,4 +50,10 @@ export const API = {
   CURRENT_VERSION: 'v1',
 } as const;
 
+export const OAUTH = {
+  GOOGLE_SCOPES: ['profile', 'email'],
+  DEFAULT_REDIRECT_SUCCESS: '/dashboard',
+  DEFAULT_REDIRECT_ERROR: '/login?error=oauth_failed',
+} as const;
+
 
